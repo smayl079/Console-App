@@ -1,4 +1,4 @@
 ﻿# Console-App
 
-CourseApp konsol tÉ™tbiqi.
+CourseApp konsol
 
