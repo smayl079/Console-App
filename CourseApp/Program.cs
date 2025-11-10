@@ -7,17 +7,19 @@ using System.Linq;
 
 IGroupRepository groupRepository = new GroupRepository();
 IStudentRepository studentRepository = new StudentRepository();
-IGroupService groupService = new GroupService(groupRepository);
+IGroupService groupService = new GroupService(groupRepository, studentRepository);
 IStudentService studentService = new StudentService(studentRepository, groupRepository);
 
-Helpers.DisplayInfo("Course Management Console Application-a xoş gəldiniz!");
+Helpers.DisplayInfo("Welcome to Course Management Console Application!");
 
 var exitRequested = false;
 while (!exitRequested)
 {
     var handler = new MenuHandler(groupService, studentService);
     handler.PrintMenu();
-    var choice = Helpers.ReadInput("Seçiminizi daxil edin (0 - Çıxış)");
+    var choice = Helpers.ReadInput("Enter your choice (0 - Exit)");
+    
+    if (choice == null) continue; // ESC pressed - show menu again
 
     try
     {
@@ -25,7 +27,7 @@ while (!exitRequested)
         {
             case "0":
                 exitRequested = true;
-                Helpers.DisplayMessage("Proqram dayandırılır. Sağ olun!", ConsoleColor.Yellow);
+                Helpers.DisplayMessage("Program is stopping. Thank you!", ConsoleColor.Yellow);
                 break;
 
             case "1":
@@ -74,9 +76,12 @@ while (!exitRequested)
             case "15":
                 handler.SearchStudents();
                 break;
+            case "16":
+                handler.GetAllGroupsWithStudents();
+                break;
 
             default:
-                Helpers.DisplayError("Yanlış seçim. Menyudan istifadə edin.");
+                Helpers.DisplayError("Invalid choice. Please use the menu.");
                 break;
         }
     }
@@ -87,7 +92,7 @@ while (!exitRequested)
 
     if (!exitRequested)
     {
-        Helpers.ReadInput("\nDavam etmək üçün Enter basın");
+        Helpers.ReadInput("\nPress Enter to continue", allowEscape: false);
         Console.Clear();
     }
 }

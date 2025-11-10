@@ -1,4 +1,6 @@
-    namespace Service.Helpers;
+using System.Text;
+
+namespace Service.Helpers;
 
 public static class Helpers
 {
@@ -24,17 +26,51 @@ public static class Helpers
         DisplayMessage($"Info: {message}", ConsoleColor.Cyan);
     }
 
-    public static string ReadInput(string prompt)
+    public static string? ReadInput(string prompt, bool allowEscape = true)
     {
-        Console.Write($"{prompt}: ");
-        return Console.ReadLine() ?? string.Empty;
+        Console.Write($"{prompt} (Press ESC to cancel): ");
+        
+        var input = new StringBuilder();
+        while (true)
+        {
+            var key = Console.ReadKey(true);
+            
+            if (key.Key == ConsoleKey.Escape && allowEscape)
+            {
+                Console.WriteLine();
+                return null; // ESC pressed - return null to indicate cancellation
+            }
+            
+            if (key.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                return input.ToString();
+            }
+            
+            if (key.Key == ConsoleKey.Backspace)
+            {
+                if (input.Length > 0)
+                {
+                    input.Remove(input.Length - 1, 1);
+                    Console.Write("\b \b");
+                }
+            }
+            else if (!char.IsControl(key.KeyChar))
+            {
+                input.Append(key.KeyChar);
+                Console.Write(key.KeyChar);
+            }
+        }
     }
 
-    public static int ReadIntInput(string prompt)
+    public static int? ReadIntInput(string prompt)
     {
         while (true)
         {
             var input = ReadInput(prompt);
+            if (input == null)
+                return null; // ESC pressed - return null to indicate cancellation
+            
             if (int.TryParse(input, out int result))
                 return result;
             DisplayError("Invalid input. Please enter a valid number.");

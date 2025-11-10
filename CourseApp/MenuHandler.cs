@@ -19,7 +19,7 @@ public class MenuHandler
     public void PrintMenu()
     {
         Console.Clear();
-        Helpers.DisplayMessage("=== Menyu ===", ConsoleColor.Yellow);
+        Helpers.DisplayMessage("=== Menu ===", ConsoleColor.Yellow);
         Console.WriteLine("1 - Create Group");
         Console.WriteLine("2 - Update Group");
         Console.WriteLine("3 - Delete Group");
@@ -35,14 +35,21 @@ public class MenuHandler
         Console.WriteLine("13 - Get All Students by Group Id");
         Console.WriteLine("14 - Search Groups by Name");
         Console.WriteLine("15 - Search Students by Name or Surname");
+        Console.WriteLine("16 - Get All Groups with Students");
         Console.WriteLine();
     }
 
     public void CreateGroup()
     {
-        var name = Helpers.ReadInput("Qrup adi");
-        var teacher = ReadLettersOnly("Müəllim");
-        var room = Helpers.ReadInput("Otaq");
+        var name = Helpers.ReadInput("Group name");
+        if (name == null) return; 
+        
+        var teacher = ReadLettersOnly("Teacher");
+        if (teacher == null) return; 
+        
+        var room = Helpers.ReadInput("Room");
+        if (room == null) return; 
+        
         var created = _groupService.CreateGroup(new Group
         {
             Name = name,
@@ -50,46 +57,57 @@ public class MenuHandler
             Room = room.Trim(),
             CreatedAt = DateTime.UtcNow
         });
-        Helpers.DisplaySuccess($"Group yaradildi. ID: {created.Id}, Tarix: {created.CreatedAt:g}");
+        Helpers.DisplaySuccess($"Group created. ID: {created.Id}, Date: {created.CreatedAt:g}");
     }
 
     public void UpdateGroup()
     {
-        var id = Helpers.ReadIntInput("Qrup ID");
-        var existing = _groupService.GetGroupById(id);
+        var id = Helpers.ReadIntInput("Group ID");
+        if (id == null) return; 
+        
+        var existing = _groupService.GetGroupById(id.Value);
         if (existing == null)
         {
-            Helpers.DisplayError("Group tapılmadı.");
+            Helpers.DisplayError("Group not found.");
             return;
         }
 
-        var name = ReadWithDefault("Yeni qrup adı", existing.Name);
-        var teacher = ReadLettersOnlyOptional("Yeni müəllim", existing.Teacher);
-        var room = ReadWithDefault("Yeni otaq", existing.Room);
+        var name = ReadWithDefault("New group name", existing.Name);
+        if (name == null) return; 
+        
+        var teacher = ReadLettersOnlyOptional("New teacher", existing.Teacher);
+        if (teacher == null) return; 
+        
+        var room = ReadWithDefault("New room", existing.Room);
+        if (room == null) return; 
 
         if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
         if (string.IsNullOrWhiteSpace(teacher)) teacher = existing.Teacher;
         if (string.IsNullOrWhiteSpace(room)) room = existing.Room;
 
-        _groupService.UpdateGroup(new Group { Id = id, Name = name, Teacher = teacher, Room = room, CreatedAt = existing.CreatedAt });
-        Helpers.DisplaySuccess("Group yeniləndi.");
+        _groupService.UpdateGroup(new Group { Id = id.Value, Name = name, Teacher = teacher, Room = room, CreatedAt = existing.CreatedAt });
+        Helpers.DisplaySuccess("Group updated.");
     }
 
     public void DeleteGroup()
     {
-        var id = Helpers.ReadIntInput("Qrup ID");
-        var ok = _groupService.DeleteGroup(id);
-        if (ok) Helpers.DisplaySuccess("Group silindi.");
-        else Helpers.DisplayError("Group tapılmadı.");
+        var id = Helpers.ReadIntInput("Group ID");
+        if (id == null) return; 
+        
+        var ok = _groupService.DeleteGroup(id.Value);
+        if (ok) Helpers.DisplaySuccess("Group deleted.");
+        else Helpers.DisplayError("Group not found.");
     }
 
     public void GetGroupById()
     {
-        var id = Helpers.ReadIntInput("Qrup ID");
-        var group = _groupService.GetGroupById(id);
+        var id = Helpers.ReadIntInput("Group ID");
+        if (id == null) return; 
+        
+        var group = _groupService.GetGroupById(id.Value);
         if (group == null)
         {
-            Helpers.DisplayError("Group tapılmadı.");
+            Helpers.DisplayError("Group not found.");
             return;
         }
         Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Created: {group.CreatedAt:g} | Students: {group.Students.Count}");
@@ -97,14 +115,18 @@ public class MenuHandler
 
     public void GetGroupsByTeacher()
     {
-        var teacher = Helpers.ReadInput("Müəllim adı");
+        var teacher = Helpers.ReadInput("Teacher name");
+        if (teacher == null) return;
+        
         var groups = _groupService.GetAllGroupsByTeacher(teacher);
         PrintGroups(groups);
     }
 
     public void GetGroupsByRoom()
     {
-        var room = Helpers.ReadInput("Otaq");
+        var room = Helpers.ReadInput("Room");
+        if (room == null) return; 
+        
         var groups = _groupService.GetAllGroupsByRoom(room);
         PrintGroups(groups);
     }
@@ -117,86 +139,113 @@ public class MenuHandler
 
     public void CreateStudent()
     {
-        var name = ReadLettersOnly("Tələbə adı");
-        var surname = ReadLettersOnly("Tələbə soyadı");
-        var age = Helpers.ReadIntInput("Yaş");
-        var groupId = Helpers.ReadIntInput("Qrup ID");
+        var name = ReadLettersOnly("Student name");
+        if (name == null) return;
+        
+        var surname = ReadLettersOnly("Student surname");
+        if (surname == null) return;
+        
+        var age = Helpers.ReadIntInput("Age");
+        if (age == null) return; 
+        
+        var groupId = Helpers.ReadIntInput("Group ID");
+        if (groupId == null) return; 
 
-        var group = _groupService.GetGroupById(groupId) ?? throw new Exception("Qrup tapılmadı.");
-        var created = _studentService.CreateStudent(new Student { Name = name, Surname = surname, Age = age, Group = group });
-        Helpers.DisplaySuccess($"Student yaradıldı. ID: {created.Id}");
+        var group = _groupService.GetGroupById(groupId.Value) ?? throw new Exception("Group not found.");
+        var created = _studentService.CreateStudent(new Student { Name = name, Surname = surname, Age = age.Value, Group = group });
+        Helpers.DisplaySuccess($"Student created. ID: {created.Id}");
     }
 
     public void UpdateStudent()
     {
-        var id = Helpers.ReadIntInput("Tələbə ID");
-        var existing = _studentService.GetStudentById(id);
+        var id = Helpers.ReadIntInput("Student ID");
+        if (id == null) return; 
+        
+        var existing = _studentService.GetStudentById(id.Value);
         if (existing == null)
         {
-            Helpers.DisplayError("Student tapılmadı.");
+            Helpers.DisplayError("Student not found.");
             return;
         }
         if (existing.Group == null)
         {
-            Helpers.DisplayError("Student üçün qrup məlumatı tapılmadı.");
+            Helpers.DisplayError("Group information not found for student.");
             return;
         }
 
-        var name = ReadLettersOnlyOptional("Yeni ad", existing.Name);
-        var surname = ReadLettersOnlyOptional("Yeni soyad", existing.Surname);
-        var age = ReadIntWithDefault("Yeni yaş", existing.Age);
-        var groupId = ReadIntWithDefault("Yeni qrup ID", existing.Group.Id);
-
+        var name = ReadLettersOnlyOptional("New name", existing.Name);
+        if (name == null) return; 
+        
+        var surname = ReadLettersOnlyOptional("New surname", existing.Surname);
+        if (surname == null) return; 
+        
+        var age = ReadIntWithDefault("New age", existing.Age);
+        if (age == null) return; 
+        
+        var groupId = ReadIntWithDefault("New group ID", existing.Group.Id);
+        if (groupId == null) return; 
         if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
         if (string.IsNullOrWhiteSpace(surname)) surname = existing.Surname;
 
-        var group = _groupService.GetGroupById(groupId) ?? throw new Exception("Qrup tapılmadı.");
-        _studentService.UpdateStudent(new Student { Id = id, Name = name, Surname = surname, Age = age, Group = group });
-        Helpers.DisplaySuccess("Student yeniləndi.");
+        var group = _groupService.GetGroupById(groupId.Value) ?? throw new Exception("Group not found.");
+        _studentService.UpdateStudent(new Student { Id = id.Value, Name = name, Surname = surname, Age = age.Value, Group = group });
+        Helpers.DisplaySuccess("Student updated.");
     }
 
     public void GetStudentById()
     {
-        var id = Helpers.ReadIntInput("Tələbə ID");
-        var s = _studentService.GetStudentById(id);
-        if (s == null) { Helpers.DisplayError("Student tapılmadı."); return; }
+        var id = Helpers.ReadIntInput("Student ID");
+        if (id == null) return; 
+        
+        var s = _studentService.GetStudentById(id.Value);
+        if (s == null) { Helpers.DisplayError("Student not found."); return; }
         Console.WriteLine($"\nID: {s.Id} | {s.Name} {s.Surname} | Age: {s.Age} | Group: {s.Group.Name} ({s.Group.Id})");
     }
 
     public void DeleteStudent()
     {
-        var id = Helpers.ReadIntInput("Tələbə ID");
-        var ok = _studentService.DeleteStudent(id);
-        if (ok) Helpers.DisplaySuccess("Student silindi.");
-        else Helpers.DisplayError("Student tapılmadı.");
+        var id = Helpers.ReadIntInput("Student ID");
+        if (id == null) return; 
+        
+        var ok = _studentService.DeleteStudent(id.Value);
+        if (ok) Helpers.DisplaySuccess("Student deleted.");
+        else Helpers.DisplayError("Student not found.");
     }
 
     public void GetStudentsByAge()
     {
-        var age = Helpers.ReadIntInput("Yaş");
-        var students = _studentService.GetAllStudents().Where(s => s.Age == age).ToList();
+        var age = Helpers.ReadIntInput("Age");
+        if (age == null) return; 
+        
+        var students = _studentService.GetAllStudents().Where(s => s.Age == age.Value).ToList();
         PrintStudents(students);
     }
 
     public void GetStudentsByGroupId()
     {
-        var groupId = Helpers.ReadIntInput("Qrup ID");
-        var group = _groupService.GetGroupById(groupId);
-        if (group == null) { Helpers.DisplayError("Qrup tapılmadı."); return; }
+        var groupId = Helpers.ReadIntInput("Group ID");
+        if (groupId == null) return; 
+        
+        var group = _groupService.GetGroupById(groupId.Value);
+        if (group == null) { Helpers.DisplayError("Group not found."); return; }
         var students = _studentService.GetStudentsByGroup(group);
         PrintStudents(students);
     }
 
     public void SearchGroupsByName()
     {
-        var name = Helpers.ReadInput("Axtarış (qrup adı)");
+        var name = Helpers.ReadInput("Search (group name)");
+        if (name == null) return; 
+        
         var groups = _groupService.SearchGroupsByName(name);
         PrintGroups(groups);
     }
 
     public void SearchStudents()
     {
-        var query = Helpers.ReadInput("Axtarış (ad və ya soyad)");
+        var query = Helpers.ReadInput("Search (name or surname)");
+        if (query == null) return; 
+        
         var students = _studentService.GetAllStudents()
             .Where(s => s.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                         s.Surname.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -204,9 +253,15 @@ public class MenuHandler
         PrintStudents(students);
     }
 
+    public void GetAllGroupsWithStudents()
+    {
+        var groups = _groupService.GetAllGroups();
+        PrintGroupsWithStudents(groups);
+    }
+
     private static void PrintGroups(IEnumerable<Group> groups)
     {
-        Console.WriteLine("\n=== Qruplar ===");
+        Console.WriteLine("\n=== Groups ===");
         foreach (var g in groups)
         {
             Console.WriteLine($"ID: {g.Id} | {g.Name} | {g.Teacher} | {g.Room} | Created: {g.CreatedAt:g} | Students: {g.Students.Count}");
@@ -215,27 +270,60 @@ public class MenuHandler
 
     private static void PrintStudents(IEnumerable<Student> students)
     {
-        Console.WriteLine("\n=== Tələbələr ===");
+        Console.WriteLine("\n=== Students ===");
         foreach (var s in students)
         {
             Console.WriteLine($"ID: {s.Id} | {s.Name} {s.Surname} | Age: {s.Age} | Group: {s.Group.Name} ({s.Group.Id})");
         }
     }
 
-    private static string ReadLettersOnly(string prompt)
+    private static void PrintGroupsWithStudents(IEnumerable<Group> groups)
+    {
+        Console.WriteLine("\n=== Groups with Students ===");
+        var groupsList = groups.ToList();
+        if (groupsList.Count == 0)
+        {
+            Console.WriteLine("No groups found.");
+            return;
+        }
+
+        foreach (var group in groupsList)
+        {
+            Console.WriteLine($"\nGroup: {group.Name} (ID: {group.Id})");
+            Console.WriteLine($"Teacher: {group.Teacher} | Room: {group.Room} | Created: {group.CreatedAt:g}");
+            
+            if (group.Students.Count == 0)
+            {
+                Console.WriteLine("  No students in this group.");
+            }
+            else
+            {
+                Console.WriteLine($"  Students ({group.Students.Count}):");
+                foreach (var student in group.Students)
+                {
+                    Console.WriteLine($"    - {student.Name} {student.Surname} (ID: {student.Id}, Age: {student.Age})");
+                }
+            }
+        }
+    }
+
+    private static string? ReadLettersOnly(string prompt)
     {
         while (true)
         {
-            var input = (Helpers.ReadInput(prompt) ?? string.Empty).Trim();
+            var input = Helpers.ReadInput(prompt);
+            if (input == null) return null; 
+            
+            input = input.Trim();
             if (string.IsNullOrWhiteSpace(input))
             {
-                Helpers.DisplayError("Dəyər boş ola bilməz.");
+                Helpers.DisplayError("Value cannot be empty.");
                 continue;
             }
             var allLetters = input.All(char.IsLetter);
             if (!allLetters)
             {
-                Helpers.DisplayError("Yalnız hərf daxil edin (rəqəm və simvol olmaz).");
+                Helpers.DisplayError("Please enter only letters (no numbers or symbols).");
                 continue;
             }
             return CapitalizeFirst(input);
@@ -250,11 +338,13 @@ public class MenuHandler
         return first + rest;
     }
 
-    private static string ReadWithDefault(string prompt, string current)
+    private static string? ReadWithDefault(string prompt, string current)
     {
         while (true)
         {
             var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (input == null) return null; 
+            
             if (string.IsNullOrWhiteSpace(input))
                 return current;
 
@@ -262,18 +352,20 @@ public class MenuHandler
         }
     }
 
-    private static string ReadLettersOnlyOptional(string prompt, string current)
+    private static string? ReadLettersOnlyOptional(string prompt, string current)
     {
         while (true)
         {
-            var input = Helpers.ReadInput($"{prompt} ({current})") ?? string.Empty;
+            var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (input == null) return null; 
+            
             input = input.Trim();
             if (string.IsNullOrWhiteSpace(input))
                 return current;
 
             if (!input.All(char.IsLetter))
             {
-                Helpers.DisplayError("Yalnız hərf daxil edin (rəqəm və simvol olmaz).");
+                Helpers.DisplayError("Please enter only letters (no numbers or symbols).");
                 continue;
             }
 
@@ -281,18 +373,19 @@ public class MenuHandler
         }
     }
 
-    private static int ReadIntWithDefault(string prompt, int current)
+    private static int? ReadIntWithDefault(string prompt, int current)
     {
         while (true)
         {
             var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (input == null) return null; 
             if (string.IsNullOrWhiteSpace(input))
                 return current;
 
             if (int.TryParse(input.Trim(), out var value))
                 return value;
 
-            Helpers.DisplayError("Yalnız rəqəm daxil edin.");
+            Helpers.DisplayError("Please enter only numbers.");
         }
     }
 }
