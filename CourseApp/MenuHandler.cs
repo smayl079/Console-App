@@ -42,8 +42,21 @@ public class MenuHandler
     {
         var name = Helpers.ReadInput("Qrup adı");
         var teacher = Helpers.ReadInput("Müəllim");
+        if (string.IsNullOrWhiteSpace(teacher) || char.IsLower(teacher.Trim()[0]))
+        {
+            Helpers.DisplayError("Müəllim adı böyük hərflə başlamalıdır.");
+            return;
+        }
         var room = Helpers.ReadInput("Otaq");
-        var created = _groupService.CreateGroup(new Group { Name = name, Teacher = teacher, Room = room });
+        var status = Helpers.ReadInput("Status");
+        var created = _groupService.CreateGroup(new Group
+        {
+            Name = name,
+            Teacher = teacher.Trim(),
+            Room = room.Trim(),
+            Status = status.Trim(),
+            CreatedAt = DateTime.UtcNow
+        });
         Helpers.DisplaySuccess($"Group yaradıldı. ID: {created.Id}");
     }
 
@@ -52,8 +65,14 @@ public class MenuHandler
         var id = Helpers.ReadIntInput("Qrup ID");
         var name = Helpers.ReadInput("Yeni qrup adı");
         var teacher = Helpers.ReadInput("Yeni müəllim");
+        if (!string.IsNullOrWhiteSpace(teacher) && char.IsLower(teacher.Trim()[0]))
+        {
+            Helpers.DisplayError("Müəllim adı böyük hərflə başlamalıdır.");
+            return;
+        }
         var room = Helpers.ReadInput("Yeni otaq");
-        _groupService.UpdateGroup(new Group { Id = id, Name = name, Teacher = teacher, Room = room });
+        var status = Helpers.ReadInput("Yeni status");
+        _groupService.UpdateGroup(new Group { Id = id, Name = name, Teacher = teacher, Room = room, Status = status });
         Helpers.DisplaySuccess("Group yeniləndi.");
     }
 
@@ -74,7 +93,7 @@ public class MenuHandler
             Helpers.DisplayError("Group tapılmadı.");
             return;
         }
-        Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Students: {group.Students.Count}");
+        Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Status: {group.Status} | Created: {group.CreatedAt:g} | Students: {group.Students.Count}");
     }
 
     public void GetGroupsByTeacher()
@@ -176,7 +195,7 @@ public class MenuHandler
         Console.WriteLine("\n=== Qruplar ===");
         foreach (var g in groups)
         {
-            Console.WriteLine($"ID: {g.Id} | {g.Name} | {g.Teacher} | {g.Room} | Students: {g.Students.Count}");
+            Console.WriteLine($"ID: {g.Id} | {g.Name} | {g.Teacher} | {g.Room} | Status: {g.Status} | Created: {g.CreatedAt:g} | Students: {g.Students.Count}");
         }
     }
 
