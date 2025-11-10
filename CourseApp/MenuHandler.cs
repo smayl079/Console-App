@@ -40,39 +40,38 @@ public class MenuHandler
 
     public void CreateGroup()
     {
-        var name = Helpers.ReadInput("Qrup adı");
-        var teacher = Helpers.ReadInput("Müəllim");
-        if (string.IsNullOrWhiteSpace(teacher) || char.IsLower(teacher.Trim()[0]))
-        {
-            Helpers.DisplayError("Müəllim adı böyük hərflə başlamalıdır.");
-            return;
-        }
+        var name = Helpers.ReadInput("Qrup adi");
+        var teacher = ReadLettersOnly("Müəllim");
         var room = Helpers.ReadInput("Otaq");
-        var status = Helpers.ReadInput("Status");
         var created = _groupService.CreateGroup(new Group
         {
             Name = name,
-            Teacher = teacher.Trim(),
+            Teacher = teacher,
             Room = room.Trim(),
-            Status = status.Trim(),
             CreatedAt = DateTime.UtcNow
         });
-        Helpers.DisplaySuccess($"Group yaradıldı. ID: {created.Id}");
+        Helpers.DisplaySuccess($"Group yaradildi. ID: {created.Id}, Tarix: {created.CreatedAt:g}");
     }
 
     public void UpdateGroup()
     {
         var id = Helpers.ReadIntInput("Qrup ID");
-        var name = Helpers.ReadInput("Yeni qrup adı");
-        var teacher = Helpers.ReadInput("Yeni müəllim");
-        if (!string.IsNullOrWhiteSpace(teacher) && char.IsLower(teacher.Trim()[0]))
+        var existing = _groupService.GetGroupById(id);
+        if (existing == null)
         {
-            Helpers.DisplayError("Müəllim adı böyük hərflə başlamalıdır.");
+            Helpers.DisplayError("Group tapılmadı.");
             return;
         }
-        var room = Helpers.ReadInput("Yeni otaq");
-        var status = Helpers.ReadInput("Yeni status");
-        _groupService.UpdateGroup(new Group { Id = id, Name = name, Teacher = teacher, Room = room, Status = status });
+
+        var name = ReadWithDefault("Yeni qrup adı", existing.Name);
+        var teacher = ReadLettersOnlyOptional("Yeni müəllim", existing.Teacher);
+        var room = ReadWithDefault("Yeni otaq", existing.Room);
+
+        if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
+        if (string.IsNullOrWhiteSpace(teacher)) teacher = existing.Teacher;
+        if (string.IsNullOrWhiteSpace(room)) room = existing.Room;
+
+        _groupService.UpdateGroup(new Group { Id = id, Name = name, Teacher = teacher, Room = room, CreatedAt = existing.CreatedAt });
         Helpers.DisplaySuccess("Group yeniləndi.");
     }
 
@@ -93,7 +92,7 @@ public class MenuHandler
             Helpers.DisplayError("Group tapılmadı.");
             return;
         }
-        Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Status: {group.Status} | Created: {group.CreatedAt:g} | Students: {group.Students.Count}");
+        Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Created: {group.CreatedAt:g} | Students: {group.Students.Count}");
     }
 
     public void GetGroupsByTeacher()
@@ -118,8 +117,8 @@ public class MenuHandler
 
     public void CreateStudent()
     {
-        var name = Helpers.ReadInput("Tələbə adı");
-        var surname = Helpers.ReadInput("Tələbə soyadı");
+        var name = ReadLettersOnly("Tələbə adı");
+        var surname = ReadLettersOnly("Tələbə soyadı");
         var age = Helpers.ReadIntInput("Yaş");
         var groupId = Helpers.ReadIntInput("Qrup ID");
 
@@ -131,10 +130,25 @@ public class MenuHandler
     public void UpdateStudent()
     {
         var id = Helpers.ReadIntInput("Tələbə ID");
-        var name = Helpers.ReadInput("Yeni ad");
-        var surname = Helpers.ReadInput("Yeni soyad");
-        var age = Helpers.ReadIntInput("Yeni yaş");
-        var groupId = Helpers.ReadIntInput("Yeni qrup ID");
+        var existing = _studentService.GetStudentById(id);
+        if (existing == null)
+        {
+            Helpers.DisplayError("Student tapılmadı.");
+            return;
+        }
+        if (existing.Group == null)
+        {
+            Helpers.DisplayError("Student üçün qrup məlumatı tapılmadı.");
+            return;
+        }
+
+        var name = ReadLettersOnlyOptional("Yeni ad", existing.Name);
+        var surname = ReadLettersOnlyOptional("Yeni soyad", existing.Surname);
+        var age = ReadIntWithDefault("Yeni yaş", existing.Age);
+        var groupId = ReadIntWithDefault("Yeni qrup ID", existing.Group.Id);
+
+        if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
+        if (string.IsNullOrWhiteSpace(surname)) surname = existing.Surname;
 
         var group = _groupService.GetGroupById(groupId) ?? throw new Exception("Qrup tapılmadı.");
         _studentService.UpdateStudent(new Student { Id = id, Name = name, Surname = surname, Age = age, Group = group });
@@ -195,7 +209,7 @@ public class MenuHandler
         Console.WriteLine("\n=== Qruplar ===");
         foreach (var g in groups)
         {
-            Console.WriteLine($"ID: {g.Id} | {g.Name} | {g.Teacher} | {g.Room} | Status: {g.Status} | Created: {g.CreatedAt:g} | Students: {g.Students.Count}");
+            Console.WriteLine($"ID: {g.Id} | {g.Name} | {g.Teacher} | {g.Room} | Created: {g.CreatedAt:g} | Students: {g.Students.Count}");
         }
     }
 
@@ -205,6 +219,80 @@ public class MenuHandler
         foreach (var s in students)
         {
             Console.WriteLine($"ID: {s.Id} | {s.Name} {s.Surname} | Age: {s.Age} | Group: {s.Group.Name} ({s.Group.Id})");
+        }
+    }
+
+    private static string ReadLettersOnly(string prompt)
+    {
+        while (true)
+        {
+            var input = (Helpers.ReadInput(prompt) ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Helpers.DisplayError("Dəyər boş ola bilməz.");
+                continue;
+            }
+            var allLetters = input.All(char.IsLetter);
+            if (!allLetters)
+            {
+                Helpers.DisplayError("Yalnız hərf daxil edin (rəqəm və simvol olmaz).");
+                continue;
+            }
+            return CapitalizeFirst(input);
+        }
+    }
+
+    private static string CapitalizeFirst(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        var first = char.ToUpper(text[0]);
+        var rest = text.Length > 1 ? text.Substring(1) : string.Empty;
+        return first + rest;
+    }
+
+    private static string ReadWithDefault(string prompt, string current)
+    {
+        while (true)
+        {
+            var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (string.IsNullOrWhiteSpace(input))
+                return current;
+
+            return input.Trim();
+        }
+    }
+
+    private static string ReadLettersOnlyOptional(string prompt, string current)
+    {
+        while (true)
+        {
+            var input = Helpers.ReadInput($"{prompt} ({current})") ?? string.Empty;
+            input = input.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+                return current;
+
+            if (!input.All(char.IsLetter))
+            {
+                Helpers.DisplayError("Yalnız hərf daxil edin (rəqəm və simvol olmaz).");
+                continue;
+            }
+
+            return CapitalizeFirst(input);
+        }
+    }
+
+    private static int ReadIntWithDefault(string prompt, int current)
+    {
+        while (true)
+        {
+            var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (string.IsNullOrWhiteSpace(input))
+                return current;
+
+            if (int.TryParse(input.Trim(), out var value))
+                return value;
+
+            Helpers.DisplayError("Yalnız rəqəm daxil edin.");
         }
     }
 }
