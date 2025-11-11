@@ -19,6 +19,7 @@ public class MenuHandler
     public void PrintMenu()
     {
         Console.Clear();
+        Helpers.PlayMenuSound();
         Helpers.DisplayMessage("=== Menu ===", ConsoleColor.Yellow);
         Console.WriteLine("1 - Create Group");
         Console.WriteLine("2 - Update Group");

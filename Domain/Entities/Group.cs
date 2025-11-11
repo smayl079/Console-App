@@ -8,6 +8,6 @@ public class Group
     public string Room { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public object Students { get; set; }
+    public List<Student> Students { get; set; } = new List<Student>();
 }
 

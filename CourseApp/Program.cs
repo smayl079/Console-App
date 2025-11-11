@@ -32,6 +32,7 @@ while (!exitRequested)
 
             case "1":
                 handler.CreateGroup();
+                Helpers.PlaySound("Succes.wav");
                 break;
             case "2":
                 handler.UpdateGroup();
@@ -95,4 +96,5 @@ while (!exitRequested)
         Helpers.ReadInput("\nPress Enter to continue", allowEscape: false);
         Console.Clear();
     }
+
 }
