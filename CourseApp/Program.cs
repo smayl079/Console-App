@@ -1,8 +1,8 @@
 using CourseApp;
 using Domain.Interfaces;
-using Repository.Repositories;
+using Repository.Implementations;
 using Service.Helpers;
-using Service.Services;
+using Service.Implementations;
 using System.Linq;
 
 IGroupRepository groupRepository = new GroupRepository();

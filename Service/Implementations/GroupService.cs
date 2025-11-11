@@ -3,7 +3,7 @@ using Domain.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Service.Services;
+namespace Service.Implementations;
 
 public class GroupService : IGroupService
 {
@@ -136,3 +136,5 @@ public class GroupService : IGroupService
         }
     }
 }
+
+

@@ -3,7 +3,7 @@ using Domain.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Repository.Repositories;
+namespace Repository.Implementations;
 
 public class GroupRepository : IGroupRepository
 {
@@ -64,3 +64,5 @@ public class GroupRepository : IGroupRepository
         return _groups.Where(g => g.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 }
+
+

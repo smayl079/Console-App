@@ -1,3 +1,4 @@
+﻿using System.Media;
 using System.Text;
 
 namespace Service.Helpers;
@@ -38,7 +39,7 @@ public static class Helpers
             if (key.Key == ConsoleKey.Escape && allowEscape)
             {
                 Console.WriteLine();
-                return null; // ESC pressed - return null to indicate cancellation
+                return null; 
             }
             
             if (key.Key == ConsoleKey.Enter)
@@ -62,14 +63,41 @@ public static class Helpers
             }
         }
     }
+    public static void PlaySound(string fileName, bool async = true)
+    {
+        try
+        {
+            // Səs faylının yolu
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sounds", fileName);
 
+            if (!File.Exists(path))
+            {
+                // Əgər səs tapılmasa, fallback beep
+                Console.Beep(700, 150);
+                return;
+            }
+
+            using (SoundPlayer player = new SoundPlayer(path))
+            {
+                if (async)
+                    player.Play();      // arxa planda oxuyur
+                else
+                    player.PlaySync();  // proqramı dayandırır, səs bitəndə davam edir
+            }
+        }
+        catch
+        {
+            // fallback (səs oynatmaq alınmasa)
+            Console.Beep(500, 200);
+        }
+    }
     public static int? ReadIntInput(string prompt)
     {
         while (true)
         {
             var input = ReadInput(prompt);
             if (input == null)
-                return null; // ESC pressed - return null to indicate cancellation
+                return null; 
             
             if (int.TryParse(input, out int result))
                 return result;

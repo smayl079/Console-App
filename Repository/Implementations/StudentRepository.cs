@@ -3,7 +3,7 @@ using Domain.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Repository.Repositories;
+namespace Repository.Implementations;
 
 public class StudentRepository : IStudentRepository
 {
@@ -79,3 +79,5 @@ public class StudentRepository : IStudentRepository
         return _students.Where(s => s.Group.Id == group.Id).ToList();
     }
 }
+
+

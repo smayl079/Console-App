@@ -2,7 +2,7 @@ using Domain.Entities;
 using Domain.Interfaces;
 using System.Collections.Generic;
 
-namespace Service.Services;
+namespace Service.Implementations;
 
 public class StudentService : IStudentService
 {
@@ -20,8 +20,14 @@ public class StudentService : IStudentService
         if (string.IsNullOrWhiteSpace(student.Name))
             throw new ArgumentException("Student name cannot be empty.", nameof(student));
 
+        if (student.Name.Length < 3)
+            throw new ArgumentException("Student name must be at least 3 characters long.", nameof(student));
+
         if (string.IsNullOrWhiteSpace(student.Surname))
             throw new ArgumentException("Student surname cannot be empty.", nameof(student));
+
+        if (student.Surname.Length < 3)
+            throw new ArgumentException("Student surname must be at least 3 characters long.", nameof(student));
 
         if (student.Age <= 0)
             throw new ArgumentException("Student age must be greater than zero.", nameof(student));
@@ -42,8 +48,14 @@ public class StudentService : IStudentService
         if (string.IsNullOrWhiteSpace(student.Name))
             throw new ArgumentException("Student name cannot be empty.", nameof(student));
 
+        if (student.Name.Length < 3)
+            throw new ArgumentException("Student name must be at least 3 characters long.", nameof(student));
+
         if (string.IsNullOrWhiteSpace(student.Surname))
             throw new ArgumentException("Student surname cannot be empty.", nameof(student));
+
+        if (student.Surname.Length < 3)
+            throw new ArgumentException("Student surname must be at least 3 characters long.", nameof(student));
 
         if (student.Age <= 0)
             throw new ArgumentException("Student age must be greater than zero.", nameof(student));
@@ -94,3 +106,5 @@ public class StudentService : IStudentService
         return _studentRepository.GetStudentsByGroup(existingGroup);
     }
 }
+
+

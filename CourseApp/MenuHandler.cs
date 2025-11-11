@@ -320,6 +320,11 @@ public class MenuHandler
                 Helpers.DisplayError("Value cannot be empty.");
                 continue;
             }
+            if (input.Length < 3)
+            {
+                Helpers.DisplayError("Name must be at least 3 characters long.");
+                continue;
+            }
             var allLetters = input.All(char.IsLetter);
             if (!allLetters)
             {
@@ -362,6 +367,12 @@ public class MenuHandler
             input = input.Trim();
             if (string.IsNullOrWhiteSpace(input))
                 return current;
+
+            if (input.Length < 3)
+            {
+                Helpers.DisplayError("Name must be at least 3 characters long.");
+                continue;
+            }
 
             if (!input.All(char.IsLetter))
             {

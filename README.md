@@ -1,4 +1,0 @@
-﻿# Console-App
-
-CourseApp konsol
-
