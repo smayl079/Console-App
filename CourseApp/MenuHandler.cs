@@ -42,13 +42,13 @@ public class MenuHandler
 
     public void CreateGroup()
     {
-        var name = Helpers.ReadInput("Group name");
+        var name = ReadRoomInput("Group name");
         if (name == null) return; 
         
         var teacher = ReadLettersOnly("Teacher");
         if (teacher == null) return; 
         
-        var room = Helpers.ReadInput("Room");
+        var room = ReadRoomInput("Room");
         if (room == null) return; 
         
         var created = _groupService.CreateGroup(new Group
@@ -63,23 +63,18 @@ public class MenuHandler
 
     public void UpdateGroup()
     {
-        var id = Helpers.ReadIntInput("Group ID");
+        var id = ReadGroupIdWithValidation();
         if (id == null) return; 
         
-        var existing = _groupService.GetGroupById(id.Value);
-        if (existing == null)
-        {
-            Helpers.DisplayError("Group not found.");
-            return;
-        }
+        var existing = _groupService.GetGroupById(id.Value)!;
 
-        var name = ReadWithDefault("New group name", existing.Name);
+        var name = ReadRoomInputOptional("New group name", existing.Name);
         if (name == null) return; 
         
         var teacher = ReadLettersOnlyOptional("New teacher", existing.Teacher);
         if (teacher == null) return; 
         
-        var room = ReadWithDefault("New room", existing.Room);
+        var room = ReadRoomInputOptional("New room", existing.Room);
         if (room == null) return; 
 
         if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
@@ -92,7 +87,7 @@ public class MenuHandler
 
     public void DeleteGroup()
     {
-        var id = Helpers.ReadIntInput("Group ID");
+        var id = ReadGroupIdWithValidation();
         if (id == null) return; 
         
         var ok = _groupService.DeleteGroup(id.Value);
@@ -102,15 +97,10 @@ public class MenuHandler
 
     public void GetGroupById()
     {
-        var id = Helpers.ReadIntInput("Group ID");
+        var id = ReadGroupIdWithValidation();
         if (id == null) return; 
         
-        var group = _groupService.GetGroupById(id.Value);
-        if (group == null)
-        {
-            Helpers.DisplayError("Group not found.");
-            return;
-        }
+        var group = _groupService.GetGroupById(id.Value)!;
         Console.WriteLine($"\nID: {group.Id} | Name: {group.Name} | Teacher: {group.Teacher} | Room: {group.Room} | Created: {group.CreatedAt:g} | Students: {group.Students.Count}");
     }
 
@@ -125,7 +115,7 @@ public class MenuHandler
 
     public void GetGroupsByRoom()
     {
-        var room = Helpers.ReadInput("Room");
+        var room = ReadRoomInput("Room");
         if (room == null) return; 
         
         var groups = _groupService.GetAllGroupsByRoom(room);
@@ -149,25 +139,20 @@ public class MenuHandler
         var age = Helpers.ReadIntInput("Age");
         if (age == null) return; 
         
-        var groupId = Helpers.ReadIntInput("Group ID");
+        var groupId = ReadGroupIdWithValidation();
         if (groupId == null) return; 
 
-        var group = _groupService.GetGroupById(groupId.Value) ?? throw new Exception("Group not found.");
+        var group = _groupService.GetGroupById(groupId.Value)!;
         var created = _studentService.CreateStudent(new Student { Name = name, Surname = surname, Age = age.Value, Group = group });
         Helpers.DisplaySuccess($"Student created. ID: {created.Id}");
     }
 
     public void UpdateStudent()
     {
-        var id = Helpers.ReadIntInput("Student ID");
+        var id = ReadStudentIdWithValidation();
         if (id == null) return; 
         
-        var existing = _studentService.GetStudentById(id.Value);
-        if (existing == null)
-        {
-            Helpers.DisplayError("Student not found.");
-            return;
-        }
+        var existing = _studentService.GetStudentById(id.Value)!;
         if (existing.Group == null)
         {
             Helpers.DisplayError("Group information not found for student.");
@@ -183,29 +168,28 @@ public class MenuHandler
         var age = ReadIntWithDefault("New age", existing.Age);
         if (age == null) return; 
         
-        var groupId = ReadIntWithDefault("New group ID", existing.Group.Id);
+        var groupId = ReadGroupIdWithValidationOptional(existing.Group.Id);
         if (groupId == null) return; 
         if (string.IsNullOrWhiteSpace(name)) name = existing.Name;
         if (string.IsNullOrWhiteSpace(surname)) surname = existing.Surname;
 
-        var group = _groupService.GetGroupById(groupId.Value) ?? throw new Exception("Group not found.");
+        var group = _groupService.GetGroupById(groupId.Value)!;
         _studentService.UpdateStudent(new Student { Id = id.Value, Name = name, Surname = surname, Age = age.Value, Group = group });
         Helpers.DisplaySuccess("Student updated.");
     }
 
     public void GetStudentById()
     {
-        var id = Helpers.ReadIntInput("Student ID");
+        var id = ReadStudentIdWithValidation();
         if (id == null) return; 
         
-        var s = _studentService.GetStudentById(id.Value);
-        if (s == null) { Helpers.DisplayError("Student not found."); return; }
-        Console.WriteLine($"\nID: {s.Id} | {s.Name} {s.Surname} | Age: {s.Age} | Group: {s.Group.Name} ({s.Group.Id})");
+        var s = _studentService.GetStudentById(id.Value)!;
+        Console.WriteLine($"\nID: {s.Id} | {s.Name} {s.Surname} | Age: {s.Age} | Group: {s.Group!.Name} ({s.Group.Id})");
     }
 
     public void DeleteStudent()
     {
-        var id = Helpers.ReadIntInput("Student ID");
+        var id = ReadStudentIdWithValidation();
         if (id == null) return; 
         
         var ok = _studentService.DeleteStudent(id.Value);
@@ -224,11 +208,10 @@ public class MenuHandler
 
     public void GetStudentsByGroupId()
     {
-        var groupId = Helpers.ReadIntInput("Group ID");
+        var groupId = ReadGroupIdWithValidation();
         if (groupId == null) return; 
         
-        var group = _groupService.GetGroupById(groupId.Value);
-        if (group == null) { Helpers.DisplayError("Group not found."); return; }
+        var group = _groupService.GetGroupById(groupId.Value)!;
         var students = _studentService.GetStudentsByGroup(group);
         PrintStudents(students);
     }
@@ -398,6 +381,100 @@ public class MenuHandler
                 return value;
 
             Helpers.DisplayError("Please enter only numbers.");
+        }
+    }
+
+    private static string? ReadRoomInput(string prompt)
+    {
+        while (true)
+        {
+            var input = Helpers.ReadInput(prompt);
+            if (input == null) return null; 
+            
+            input = input.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Helpers.DisplayError("Value cannot be empty.");
+                continue;
+            }
+            
+            // Yalnız hərf, rəqəm və boşluq icazə verilir
+            // Xüsusi simvollar qəbul edilmir
+            if (input.Any(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c)))
+            {
+                Helpers.DisplayError("Special characters (!@#$%^&*() etc.) are not allowed. Please use only letters, numbers, and spaces.");
+                continue;
+            }
+            
+            return input;
+        }
+    }
+
+    private static string? ReadRoomInputOptional(string prompt, string current)
+    {
+        while (true)
+        {
+            var input = Helpers.ReadInput($"{prompt} ({current})");
+            if (input == null) return null; 
+            
+            input = input.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+                return current;
+
+            // Yalnız hərf, rəqəm və boşluq icazə verilir
+            // Xüsusi simvollar qəbul edilmir
+            if (input.Any(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c)))
+            {
+                Helpers.DisplayError("Special characters (!@#$%^&*() etc.) are not allowed. Please use only letters, numbers, and spaces.");
+                continue;
+            }
+            
+            return input;
+        }
+    }
+
+    private int? ReadGroupIdWithValidation()
+    {
+        while (true)
+        {
+            var id = Helpers.ReadIntInput("Group ID");
+            if (id == null) return null; // ESC basıldıqda çıxış
+            
+            var existing = _groupService.GetGroupById(id.Value);
+            if (existing != null)
+                return id;
+            
+            Helpers.DisplayError("Group not found. Please try again.");
+        }
+    }
+
+    private int? ReadStudentIdWithValidation()
+    {
+        while (true)
+        {
+            var id = Helpers.ReadIntInput("Student ID");
+            if (id == null) return null; // ESC basıldıqda çıxış
+            
+            var existing = _studentService.GetStudentById(id.Value);
+            if (existing != null)
+                return id;
+            
+            Helpers.DisplayError("Student not found. Please try again.");
+        }
+    }
+
+    private int? ReadGroupIdWithValidationOptional(int currentGroupId)
+    {
+        while (true)
+        {
+            var id = ReadIntWithDefault("New group ID", currentGroupId);
+            if (id == null) return null; // ESC basıldıqda çıxış
+            
+            var existing = _groupService.GetGroupById(id.Value);
+            if (existing != null)
+                return id;
+            
+            Helpers.DisplayError("Group not found. Please try again.");
         }
     }
 }
